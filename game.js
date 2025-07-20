@@ -1,4 +1,3 @@
-
 const { Chess } = require('chess.js');
 
 class Game {
@@ -20,11 +19,9 @@ class Game {
     }
 
     move(move) {
-        console.log('Game.move - Before move, chess.turn():', this.chess.turn());
         const result = this.chess.move(move);
         if (result) {
             this.turn = this.chess.turn();
-            console.log('Game.move - After move, chess.turn():', this.chess.turn());
         }
         return result;
     }
