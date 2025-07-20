@@ -1,2 +1,20 @@
 .sass-cache
 style.css.map
+# Node.js
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+
+# Build output
+*.log
+dist
+
+# OS files
+.DS_Store
+
+# Fly.io
+fly.toml
