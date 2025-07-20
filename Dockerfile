@@ -1,18 +1,17 @@
 FROM node:20-alpine
 
-# Create app directory
+# 1. App directory
 WORKDIR /app
 
-# Install dependencies
+# 2. Install ALL dependencies (incl. devDeps needed for the build)
 COPY package*.json ./
-RUN npm install --production --silent
+RUN npm install --silent
 
-# Copy application source
+# 3. Copy source and run the build once
 COPY . .
+RUN npm run build      # generates public/script.dist.js
 
-# Expose the port the app runs on
+# 4. Expose and start
 ENV PORT 3000
 EXPOSE 3000
-
-# Start the server
-CMD ["npm", "start"] 
+CMD ["node", "server.js"]
