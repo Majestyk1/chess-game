@@ -6,9 +6,38 @@ const turnEl = $('#turn');
 const playerColorEl = $('#playerColor');
 let gameId = null;
 let playerColor = null;
+let selectedSquare = null;
+
+const isMobile = () => window.innerWidth <= 768;
+
+const highlightLegalMoves = (square) => {
+    const moves = game.moves({ square: square, verbose: true });
+    $('.square-55d63').removeClass('highlight-legal');
+    moves.forEach(move => {
+        $(`.square-${move.to}`).addClass('highlight-legal');
+    });
+};
+
+const onSquareClick = (square, piece) => {
+    if (selectedSquare) {
+        const move = game.move({ from: selectedSquare, to: square, promotion: 'q' });
+        if (move) {
+            socket.emit('move', { gameId, move });
+        }
+        selectedSquare = null;
+        $('.square-55d63').removeClass('highlight-legal');
+    } else {
+        if (piece && game.turn() === playerColor &&
+            ((game.turn() === 'w' && piece.search(/^w/) !== -1) ||
+             (game.turn() === 'b' && piece.search(/^b/) !== -1))) {
+            selectedSquare = square;
+            highlightLegalMoves(square);
+        }
+    }
+};
 
 const onDragStart = (source, piece, position, orientation) => {
-    console.log('onDragStart - Client game turn:', game.turn(), 'Player color:', playerColor);
+    if (isMobile()) return false;
     if (game.game_over() || (game.turn() !== playerColor) ||
         (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
         (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
@@ -18,11 +47,7 @@ const onDragStart = (source, piece, position, orientation) => {
 
 const onDrop = (source, target) => {
     const move = game.move({ from: source, to: target, promotion: 'q' });
-    if (move === null) {
-        console.log('Invalid move, snapping back.');
-        return 'snapback';
-    }
-    console.log('Client: Emitting move event:', { gameId, move });
+    if (move === null) return 'snapback';
     socket.emit('move', { gameId, move });
 };
 
@@ -49,27 +74,33 @@ const updateStatus = () => {
     turnEl.html(moveColor);
 };
 
+const setupBoard = () => {
+    const config = {
+        draggable: !isMobile(),
+        position: game.fen(),
+        orientation: playerColor === 'w' ? 'white' : 'black',
+        onDragStart: onDragStart,
+        onDrop: onDrop,
+        onSnapEnd: onSnapEnd,
+        onSquareClick: isMobile() ? onSquareClick : undefined,
+        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+    };
+    board = Chessboard('chessboard', config);
+};
+
 const initGame = (color) => {
     playerColor = color;
     playerColorEl.text(playerColor === 'w' ? 'White' : 'Black');
     $('#lobby').hide();
     $('#game-room').show();
 
-    const config = {
-        draggable: true,
-        position: 'start',
-        orientation: playerColor === 'w' ? 'white' : 'black',
-        onDragStart: onDragStart,
-        onDrop: onDrop,
-        onSnapEnd: onSnapEnd,
-        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
-    };
-    board = Chessboard('chessboard', config);
+    setupBoard();
     updateStatus();
 
     $(window).on('resize', () => {
         if (board) {
-            board.resize();
+            board.destroy();
+            setupBoard();
         }
     });
 };
@@ -104,7 +135,6 @@ socket.on('move', (fen) => {
     game.load(fen);
     board.position(fen);
     updateStatus();
-    console.log('socket.on(\'move\') - Game turn after move:', game.turn());
 });
 
 socket.on('error', (msg) => {
@@ -120,7 +150,7 @@ $('#send-chat').on('click', () => {
 });
 
 $('#chat-input').on('keypress', (e) => {
-    if (e.which === 13) { // 13 is the keycode for Enter
+    if (e.which === 13) {
         $('#send-chat').click();
     }
 });
@@ -132,6 +162,5 @@ socket.on('chatMessage', (data) => {
 
 socket.on('opponentDisconnected', () => {
     alert('Your opponent has disconnected. The game has ended.');
-    // Optionally, you can redirect to lobby or reset game here
     location.reload();
 });
