@@ -1,5 +1,5 @@
 {
-  "name": "checkers",
+  "name": "chess",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -9,16 +9,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/codethejason/checkers.git"
+    "url": "git+https://github.com/Majestyk1/chess-game"
   },
   "keywords": [],
-  "author": "",
+  "author": "Majestyk Vaughns",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/codethejason/checkers/issues"
+    "url": "https://github.com/Majestyk1/chess-game/issues"
   },
-  "homepage": "https://github.com/codethejason/checkers#readme",
-  "description": "",
+  "homepage": "https://github.com/Majestyk1/chess-game#readme",
+  "description": "A simple chess game built with Node.js and Socket.io",
   "dependencies": {
     "chess.js": "^1.4.0",
     "express": "^5.1.0",

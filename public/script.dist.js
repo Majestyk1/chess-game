@@ -11,40 +11,24 @@ const isMobile = () => {
   const touchCapable = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   const smallScreen = window.innerWidth <= 768;
   const mobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-  // Manual override for testing - you can add ?mobile=true to URL
   const urlParams = new URLSearchParams(window.location.search);
   const forceMode = urlParams.get('mobile');
   if (forceMode === 'true') return true;
   if (forceMode === 'false') return false;
   const mobile = touchCapable || smallScreen || mobileUserAgent;
-  console.log('isMobile check:', {
-    mobile,
-    touchCapable,
-    smallScreen,
-    mobileUserAgent,
-    userAgent: navigator.userAgent,
-    width: window.innerWidth
-  });
   return mobile;
 };
 const highlightLegalMoves = square => {
-  console.log('highlightLegalMoves called for square:', square);
   const moves = game.moves({
     square,
     verbose: true
   });
-  console.log('Legal moves found:', moves.length);
-  // Clear previous highlights
   $('.square-55d63').removeClass('highlight-legal');
-
-  // Highlight destination squares
   moves.forEach(move => {
     $(`.square-${move.to}`).addClass('highlight-legal');
   });
 };
 const canMovePiece = piece => {
-  console.log('canMovePiece check:', piece, 'gameOver:', game.game_over(), 'turn:', game.turn(), 'playerColor:', playerColor);
   if (game.game_over()) return false;
   if (game.turn() !== playerColor) return false;
   if (playerColor === 'w' && piece.search(/^b/) !== -1) return false;
@@ -52,79 +36,42 @@ const canMovePiece = piece => {
   return true;
 };
 const setupMobileClickHandlers = () => {
-  console.log('🔧 Setting up custom mobile click handlers...');
-
-  // Remove any existing click handlers first
   $('.square-55d63').off('click.mobile');
-
-  // Add our custom click handler
   $('.square-55d63').on('click.mobile', function (e) {
     e.preventDefault();
     e.stopPropagation();
     const square = $(this).attr('data-square');
     const piece = board.position()[square] || null;
-    console.log('🖱️ Custom mobile click:', {
-      square,
-      piece
-    });
-
-    // Call our click handler directly
     handleSquareClick(square, piece);
   });
 };
 const handleSquareClick = (square, piece) => {
-  console.log('🎯 handleSquareClick called:', {
-    square,
-    piece,
-    selectedSquare,
-    isMobile: isMobile()
-  });
   if (selectedSquare) {
-    console.log('Attempting move from', selectedSquare, 'to', square);
     const move = game.move({
       from: selectedSquare,
       to: square,
       promotion: 'q'
     });
     if (move) {
-      console.log('Move successful:', move);
       socket.emit('move', {
         gameId,
         move
       });
-    } else {
-      console.log('Move failed');
     }
     selectedSquare = null;
     $('.square-55d63').removeClass('highlight-legal');
   } else {
     if (piece && canMovePiece(piece)) {
-      console.log('Selecting piece:', piece, 'on square:', square);
       selectedSquare = square;
       highlightLegalMoves(square);
-    } else {
-      console.log('Cannot select piece:', piece);
     }
   }
 };
 const onSquareClick = (square, piece) => {
-  // This is the chessboard.js callback - keep for desktop compatibility
-  console.log('🎯 onSquareClick FIRED!', {
-    square,
-    piece,
-    selectedSquare,
-    isMobile: isMobile()
-  });
   handleSquareClick(square, piece);
 };
 const onDragStart = (source, piece, position, orientation) => {
-  console.log('onDragStart called:', {
-    source,
-    piece,
-    isMobile: isMobile()
-  });
   if (isMobile()) {
-    console.log('Preventing drag on mobile');
     return false;
   }
   return canMovePiece(piece);
@@ -162,7 +109,6 @@ const updateStatus = () => {
 };
 const setupBoard = () => {
   const mobile = isMobile();
-  console.log('Setting up board - mobile:', mobile);
   const config = {
     draggable: !mobile,
     position: game.fen(),
@@ -171,21 +117,13 @@ const setupBoard = () => {
     onDrop: onDrop,
     onSnapEnd: onSnapEnd,
     onSquareClick: mobile ? undefined : onSquareClick,
-    // disable for mobile, use custom handler
     pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
   };
-  console.log('Board config:', {
-    draggable: config.draggable,
-    hasSquareClick: !!config.onSquareClick
-  });
   board = Chessboard('chessboard', config);
-  console.log('🏁 Board created with config:', config);
-
-  // Set up custom mobile click handlers
   if (mobile) {
     setTimeout(() => {
       setupMobileClickHandlers();
-    }, 500); // Give the board time to render
+    }, 500);
   }
 };
 const initGame = color => {
