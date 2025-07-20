@@ -73,7 +73,7 @@ const onSquareClick = (square, piece) => {
     handleSquareClick(square, piece);
 };
 
-const onDragStart = (piece) => {
+const onDragStart = (source, piece) => {
     if (isMobile()) {
         return false;
     }
